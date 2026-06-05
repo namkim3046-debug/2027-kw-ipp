@@ -34,18 +34,24 @@
             </div>
         </header>
 
-        <div class="p-4 bg-slate-800 border border-slate-700 rounded-2xl shadow-lg flex items-center gap-4">
-            <div class="w-64">
-                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">검색 구분 (상태별 필터)</label>
+        <div class="p-4 bg-slate-800 border border-slate-700 rounded-2xl shadow-lg flex flex-col md:flex-row md:items-end gap-4">
+            <div class="w-full md:w-64">
+                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">1. 상담신청분야 필터</label>
+                <select id="roomFilter" onchange="filterData()" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:outline-none focus:border-emerald-500 font-medium text-sm text-slate-200">
+                    <option value="전체">전체 분야 보기</option>
+                </select>
+            </div>
+            <div class="w-full md:w-64">
+                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">2. 상태별 필터</label>
                 <select id="statusFilter" onchange="filterData()" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:outline-none focus:border-emerald-500 font-medium text-sm text-slate-200">
-                    <option value="전체">전체 보기</option>
+                    <option value="전체">전체 상태 보기</option>
                     <option value="pending">승인대기</option>
                     <option value="confirmed">상담확정</option>
                     <option value="completed">상담완료</option>
                     <option value="onhold">상담보류</option>
                 </select>
             </div>
-            <div class="text-xs text-slate-400 pt-6">
+            <div class="text-xs text-slate-400 pb-2 md:pb-3 flex-1 md:text-right">
                 * 목록은 <span class="text-emerald-400 font-bold">희망일자 ➡️ 희망시간</span> 순으로 정렬되어 표시됩니다. 항목을 클릭하면 수정 모달이 열립니다.
             </div>
         </div>
@@ -150,18 +156,41 @@
             document.getElementById('reservationTableBody').innerHTML = `<tr><td colspan="7" class="text-center py-20 text-slate-500"><i class="fa-solid fa-spinner animate-spin mr-2"></i>데이터를 불러오는 중...</td></tr>`;
             const res = await fetch(API_URL);
             allData = await res.json();
+            
+            buildRoomFilterOptions(); // 분야 필터 동적 생성 실행
             filterData();
         } catch (e) {
             document.getElementById('reservationTableBody').innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-20"><i class="fa-solid fa-triangle-exclamation mr-2"></i>데이터 연결 실패</td></tr>`;
         }
     }
 
-    // 필터 처리 및 오름차순 정렬 기능
-    function filterData() {
-        const filter = document.getElementById('statusFilter').value;
+    // 🛠️ 구글 데이터 기반으로 '상담신청분야(상담실)' 고유값만 추출하여 필터 목록 생성
+    function buildRoomFilterOptions() {
+        const roomSelect = document.getElementById('roomFilter');
+        roomSelect.innerHTML = '<option value="전체">전체 분야 보기</option>';
         
-        // 1. 상태 필터링
-        let filtered = filter === "전체" ? allData : allData.filter(d => d.status === filter);
+        // 데이터에서 room 데이터 추출 후 중복 제거 및 공백 정제
+        const uniqueRooms = [...new Set(allData.map(item => item.room ? item.room.trim() : '').filter(Boolean))];
+        
+        uniqueRooms.sort().forEach(room => {
+            const option = document.createElement('option');
+            option.value = room;
+            option.textContent = room;
+            roomSelect.appendChild(option);
+        });
+    }
+
+    // 🔄 복합 필터 처리(분야 + 상태) 및 오름차순 정렬 기능
+    function filterData() {
+        const selectedRoom = document.getElementById('roomFilter').value;
+        const selectedStatus = document.getElementById('statusFilter').value;
+        
+        // 1. 상담신청분야 및 상태 다중 조건 필터링
+        let filtered = allData.filter(item => {
+            const matchRoom = (selectedRoom === "전체") || (item.room && item.room.trim() === selectedRoom);
+            const matchStatus = (selectedStatus === "전체") || (item.status === selectedStatus);
+            return matchRoom && matchStatus;
+        });
         
         // 2. 희망일자(Ascending) -> 희망시간(Ascending) 정렬 로직 적용
         filtered.sort((a, b) => {
@@ -208,10 +237,16 @@
         }).join('');
     }
 
-    // 📊 현재 정렬/필터링된 상태 그대로 엑셀 다운로드 기능
+    // 📊 현재 복합 필터링/정렬된 상태 그대로 엑셀 다운로드 기능
     function downloadExcel() {
-        const filter = document.getElementById('statusFilter').value;
-        let filtered = filter === "전체" ? allData : allData.filter(d => d.status === filter);
+        const selectedRoom = document.getElementById('roomFilter').value;
+        const selectedStatus = document.getElementById('statusFilter').value;
+        
+        let filtered = allData.filter(item => {
+            const matchRoom = (selectedRoom === "전체") || (item.room && item.room.trim() === selectedRoom);
+            const matchStatus = (selectedStatus === "전체") || (item.status === selectedStatus);
+            return matchRoom && matchStatus;
+        });
         
         // 정렬 상태 맞추기
         filtered.sort((a, b) => {
@@ -240,7 +275,7 @@
         // SheetJS 작동 프로세스
         const worksheet = XLSX.utils.json_to_sheet(excelData);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "상담예약명단");
+        XXLSX.utils.book_append_sheet(workbook, worksheet, "상담예약명단");
         
         // 컬럼 너비 자동 설정 자동화
         const maxProps = [{wch: 15}, {wch: 10}, {wch: 25}, {wch: 12}, {wch: 12}, {wch: 50}, {wch: 30}];
@@ -251,147 +286,3 @@
     }
 
     // 🛠️ 날짜 안전 정제 장치
-    function formatDateForInput(dateStr) {
-        if (!dateStr) return "";
-        try {
-            let d = new Date(dateStr);
-            if (isNaN(d.getTime())) {
-                let cleaned = dateStr.replace(/\s/g, '').replace(/\./g, '-');
-                if (cleaned.endsWith('-')) cleaned = cleaned.slice(0, -1);
-                const parts = cleaned.split('-');
-                if (parts.length === 3) {
-                    return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-                }
-                return "";
-            }
-            return d.toISOString().split('T')[0];
-        } catch (e) { return ""; }
-    }
-
-    // 🛠️ 시간 안전 정제 장치
-    function formatTimeForInput(timeStr) {
-        if (!timeStr) return "09:30"; 
-        
-        let str = String(timeStr).trim();
-        
-        if (str.includes('1899') || str.includes('1900') || str.includes('T')) {
-            try {
-                if (str.includes('T')) {
-                    const timeMatch = str.match(/T(\d{2}):(\d{2})/);
-                    if (timeMatch) {
-                        let hour = parseInt(timeMatch[1], 10);
-                        let min = timeMatch[2];
-                        if (hour < 9) hour += 9;
-                        if (hour >= 24) hour -= 24; 
-                    }
-                }
-                
-                const d = new Date(timeStr);
-                if (!isNaN(d.getTime())) {
-                    let hour = d.getHours();
-                    let min = String(d.getMinutes()).padStart(2, '0');
-                    
-                    let minNum = parseInt(min, 10);
-                    if (minNum >= 15 && minNum <= 45) {
-                        min = "30";
-                    } else {
-                        if (minNum > 45) hour += 1;
-                        min = "00";
-                    }
-                    return `${String(hour).padStart(2, '0')}:${min}`;
-                }
-            } catch (e) {
-                console.error("구글 시트 시간 보정 에러:", e);
-            }
-        }
-        
-        const isPM = str.includes('오후') || str.toUpperCase().includes('PM');
-        const isAM = str.includes('오전') || str.toUpperCase().includes('AM');
-        
-        if (isPM || isAM) {
-            let cleanTime = str.replace(/오전|오후|AM|PM/gi, '').trim();
-            const parts = cleanTime.split(':');
-            if (parts.length >= 2) {
-                let hour = parseInt(parts[0], 10);
-                let min = parts[1].replace(/[^0-9]/g, '').padStart(2, '0');
-                if (isPM && hour < 12) hour += 12;
-                if (isAM && hour === 12) hour = 0;
-                return `${String(hour).padStart(2, '0')}:${min}`;
-            }
-        }
-        
-        const parts = str.split(':');
-        if (parts.length >= 2) {
-            let hour = parts[0].replace(/[^0-9]/g, '').padStart(2, '0');
-            let min = parts[1].replace(/[^0-9]/g, '').padStart(2, '0');
-            return `${hour}:${min}`;
-        }
-        
-        return "09:30"; 
-    }
-
-    function openEdit(id) {
-        const item = allData.find(d => d.id === id);
-        if (!item) return;
-
-        document.getElementById('editId').value = item.id;
-        document.getElementById('editName').value = item.name;
-        document.getElementById('editStatus').value = item.status;
-        document.getElementById('editDept').value = item.dept;
-        document.getElementById('editContent').value = item.content;
-        
-        document.getElementById('editDate').value = formatDateForInput(item.date);
-        document.getElementById('editTime').value = formatTimeForInput(item.time);
-        
-        document.getElementById('editModal').classList.remove('hidden');
-        document.getElementById('editModal').classList.add('flex');
-    }
-
-    function closeModal() {
-        document.getElementById('editModal').classList.add('hidden');
-        document.getElementById('editModal').classList.remove('flex');
-    }
-
-    async function saveChanges() {
-        const id = document.getElementById('editId').value;
-        const updated = {
-            id: Number(id),
-            action: "save",
-            name: document.getElementById('editName').value,
-            status: document.getElementById('editStatus').value,
-            dept: document.getElementById('editDept').value,
-            date: document.getElementById('editDate').value,
-            time: document.getElementById('editTime').value,
-            content: document.getElementById('editContent').value,
-            room: allData.find(d => d.id === Number(id)).room
-        };
-        await sendPost(updated);
-    }
-
-    async function deleteReservation() {
-        if (!confirm("정말 삭제하시겠습니까?")) return;
-        const id = document.getElementById('editId').value;
-        await sendPost({ id: Number(id), action: "delete" });
-    }
-
-    async function sendPost(data) {
-        document.getElementById('editModal').classList.add('opacity-50', 'pointer-events-none');
-        try {
-            await fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify(data)
-            });
-            alert("반영되었습니다.");
-            closeModal();
-            fetchData();
-        } catch (e) {
-            alert("처리 실패");
-        } finally {
-            document.getElementById('editModal').classList.remove('opacity-50', 'pointer-events-none');
-        }
-    }
-
-    window.onload = fetchData;
-</script>
-</body>
-</html>
