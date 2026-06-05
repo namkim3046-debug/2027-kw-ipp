@@ -3,121 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2027 일학습병행 상담예약 관리자 (PC버전)</title>
+    <title>2027 일학습병행 상담예약 관리자</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #0f172a; color: #f8fafc; }
-        /* 커스텀 스크롤바 스타일 */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        .tab-active { border-bottom: 3px solid #10b981; color: #10b981; }
     </style>
 </head>
-<body class="antialiased p-6">
+<body class="antialiased">
 
-    <div class="max-w-7xl mx-auto min-h-screen flex flex-col space-y-4">
-        
-        <header class="p-5 bg-slate-800 border border-slate-700 rounded-2xl flex justify-between items-center shadow-lg">
-            <h1 class="text-2xl font-bold text-emerald-400">
-                <i class="fa-solid fa-user-gear mr-2"></i>2027 일학습병행 상담신청자 관리자 (PC)
-            </h1>
-            <div class="flex items-center gap-3">
-                <button onclick="downloadExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors shadow-md">
-                    <i class="fa-solid fa-file-excel text-base"></i> 엑셀 다운로드
-                </button>
-                <button onclick="fetchData()" class="p-2 bg-slate-750 text-slate-400 hover:text-emerald-400 border border-slate-600 rounded-xl transition-colors">
-                    <i class="fa-solid fa-rotate text-lg"></i>
-                </button>
-            </div>
+    <div class="max-w-md mx-auto min-h-screen flex flex-col">
+        <header class="p-5 bg-slate-800 border-b border-slate-700 sticky top-0 z-50 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-emerald-400">2027 일학습병행 상담신청자 관리</h1>
+            <button onclick="fetchData()" class="text-slate-400 hover:text-emerald-400"><i class="fa-solid fa-rotate"></i></button>
         </header>
 
-        <div class="p-4 bg-slate-800 border border-slate-700 rounded-2xl shadow-lg flex flex-col md:flex-row md:items-end gap-4">
-            <div class="w-full md:w-64">
-                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">1. 상담신청분야 필터</label>
-                <select id="roomFilter" onchange="filterData()" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:outline-none focus:border-emerald-500 font-medium text-sm text-slate-200">
-                    <option value="전체">전체 분야 보기</option>
-                </select>
-            </div>
-            <div class="w-full md:w-64">
-                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">2. 상태별 필터</label>
-                <select id="statusFilter" onchange="filterData()" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:outline-none focus:border-emerald-500 font-medium text-sm text-slate-200">
-                    <option value="전체">전체 상태 보기</option>
-                    <option value="pending">승인대기</option>
-                    <option value="confirmed">상담확정</option>
-                    <option value="completed">상담완료</option>
-                    <option value="onhold">상담보류</option>
-                </select>
-            </div>
-            <div class="text-xs text-slate-400 pb-2 md:pb-3 flex-1 md:text-right">
-                * 목록은 <span class="text-emerald-400 font-bold">희망일자 ➡️ 희망시간</span> 순으로 정렬되어 표시됩니다. 항목을 클릭하면 수정 모달이 열립니다.
-            </div>
+        <div class="p-4 bg-slate-800 shadow-lg">
+            <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">상담실 유형 필터</label>
+            <select id="roomFilter" onchange="filterData()" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-lg focus:outline-none focus:border-emerald-500">
+                <option value="전체 보기">전체 보기</option>
+                <option value="SW개발(고광용 교수님)">SW개발(고광용 교수님)</option>
+                <option value="전자기기HW/디스플레이(김병천 교수님)">전자기기HW/디스플레이(김병천 교수님)</option>
+                <option value="반도체장비개발(남기민 교수님)">반도체장비개발(남기민 교수님)</option>
+                <option value="마케팅/광고홍보(강종천 교수님)">마케팅/광고홍보(강종천 교수님)</option>
+            </select>
         </div>
 
-        <main class="flex-grow bg-slate-800 border border-slate-700 rounded-2xl shadow-lg overflow-hidden flex flex-col">
-            <div class="overflow-x-auto w-full">
-                <table class="w-full text-left border-collapse whitespace-nowrap">
-                    <thead>
-                        <tr class="bg-slate-900/50 text-slate-300 text-sm border-b border-slate-700">
-                            <th class="p-4 font-bold text-center w-32">희망일자</th>
-                            <th class="p-4 font-bold text-center w-24">희망시간</th>
-                            <th class="p-4 font-bold w-48">학과(전공)</th>
-                            <th class="p-4 font-bold w-32">성명</th>
-                            <th class="p-4 font-bold text-center w-32">상태</th>
-                            <th class="p-4 font-bold">상담내용</th>
-                            <th class="p-4 font-bold w-40">신청 상담실</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reservationTableBody" class="text-sm divide-y divide-slate-700/60">
-                        <tr>
-                            <td colspan="7" class="text-center py-20 text-slate-500">데이터를 불러오는 중...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <main id="reservationList" class="flex-grow p-4 space-y-3 overflow-y-auto">
+            <div class="text-center py-20 text-slate-500">데이터를 불러오는 중...</div>
         </main>
     </div>
 
-    <div id="editModal" class="fixed inset-0 bg-black/80 z-[100] hidden items-center justify-center p-4 animate-fade-in">
-        <div class="bg-slate-800 w-full max-w-lg rounded-2xl p-6 space-y-4 shadow-2xl border border-slate-700 m-auto">
+    <div id="editModal" class="fixed inset-0 bg-black/80 z-[100] hidden items-start justify-center pt-10">
+        <div class="bg-slate-800 w-full max-w-md rounded-b-3xl p-6 space-y-4 shadow-2xl border-b border-slate-700">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                <h2 class="text-lg font-bold flex items-center gap-2 text-emerald-400">
-                    <i class="fa-solid fa-pen-to-square"></i> 신청 상세 관리
-                </h2>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <h2 class="text-lg font-bold">신청 상세 관리</h2>
+                <button onclick="closeModal()" class="text-slate-400"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             
             <form id="editForm" class="space-y-4 text-sm">
                 <input type="hidden" id="editId">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-slate-400 mb-1">성명</label>
-                        <input type="text" id="editName" class="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-xl focus:border-emerald-500 focus:outline-none">
+                        <input type="text" id="editName" class="w-full p-2 bg-slate-900 border border-slate-600 rounded">
                     </div>
                     <div>
-                        <label class="block text-slate-400 mb-1">상태 설정</label>
-                        <select id="editStatus" class="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-xl focus:border-emerald-500 focus:outline-none font-bold text-emerald-400">
-                            <option value="pending">승인대기</option>
-                            <option value="confirmed">상담확정</option>
-                            <option value="completed">상담완료</option>
-                            <option value="onhold">상담보류</option>
+                        <label class="block text-slate-400 mb-1">상태</label>
+                        <select id="editStatus" class="w-full p-2 bg-slate-900 border border-slate-600 rounded text-emerald-400 font-bold">
+                            <option value="pending">승인 대기</option>
+                            <option value="confirmed">확정 완료</option>
                         </select>
                     </div>
                 </div>
                 <div>
                     <label class="block text-slate-400 mb-1">학과(전공)</label>
-                    <input type="text" id="editDept" class="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-xl focus:border-emerald-500 focus:outline-none">
+                    <input type="text" id="editDept" class="w-full p-2 bg-slate-900 border border-slate-600 rounded">
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-slate-400 mb-1">희망일</label>
-                        <input type="date" id="editDate" class="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-xl focus:border-emerald-500 focus:outline-none">
+                        <input type="date" id="editDate" class="w-full p-2 bg-slate-900 border border-slate-600 rounded">
                     </div>
                     <div>
                         <label class="block text-slate-400 mb-1">시간</label>
-                        <select id="editTime" class="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-xl focus:border-emerald-500 focus:outline-none">
+                        <select id="editTime" class="w-full p-2 bg-slate-900 border border-slate-600 rounded">
                             <option value="09:30">09:30</option>
                             <option value="10:30">10:30</option>
                             <option value="13:20">13:20</option>
@@ -129,160 +80,206 @@
                 </div>
                 <div>
                     <label class="block text-slate-400 mb-1">상담 내용</label>
-                    <textarea id="editContent" rows="4" class="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-xl focus:border-emerald-500 focus:outline-none resize-none"></textarea>
+                    <textarea id="editContent" rows="3" class="w-full p-2 bg-slate-900 border border-slate-600 rounded"></textarea>
                 </div>
-                <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="deleteReservation()" class="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-xl font-bold transition-colors shadow-md">삭제</button>
-                    <button type="button" onclick="saveChanges()" class="flex-[2] bg-emerald-600 hover:bg-emerald-700 py-3 rounded-xl font-bold transition-colors shadow-md">승인 및 저장</button>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="deleteReservation()" class="flex-1 bg-red-600 py-3 rounded-xl font-bold">삭제</button>
+                    <button type="button" onclick="saveChanges()" class="flex-[2] bg-emerald-600 py-3 rounded-xl font-bold">승인 및 저장</button>
                 </div>
             </form>
         </div>
     </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxtnjRGzpdb_QB7IvCHc3DwLbpbcP8weKFBrQaFK4UhQu7rhWfN5AicdOVv6PT4RPYogg/exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbxtnjRGzpdb_QB7IvCHc3DwLbpbcP8weKFBrQaFK4UhQu7rhWfN5AicdOVv6PT4RPYogg/exec"; // ⚠️ 본인의 구글 웹앱 URL 주소를 꼭 넣어주세요!
     let allData = [];
-
-    // 상태값 매핑 딕셔너리
-    const statusMap = {
-        'pending': { text: '승인대기', class: 'text-amber-400 bg-amber-400/10 border-amber-400/30' },
-        'confirmed': { text: '상담확정', class: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30' },
-        'completed': { text: '상담완료', class: 'text-blue-400 bg-blue-400/10 border-blue-400/30' },
-        'onhold': { text: '상담보류', class: 'text-rose-400 bg-rose-400/10 border-rose-400/30' }
-    };
 
     async function fetchData() {
         try {
-            document.getElementById('reservationTableBody').innerHTML = `<tr><td colspan="7" class="text-center py-20 text-slate-500"><i class="fa-solid fa-spinner animate-spin mr-2"></i>데이터를 불러오는 중...</td></tr>`;
             const res = await fetch(API_URL);
             allData = await res.json();
-            
-            buildRoomFilterOptions(); // 분야 필터 동적 생성 실행
             filterData();
         } catch (e) {
-            document.getElementById('reservationTableBody').innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-20"><i class="fa-solid fa-triangle-exclamation mr-2"></i>데이터 연결 실패</td></tr>`;
+            document.getElementById('reservationList').innerHTML = `<div class="text-center text-red-400 py-20">데이터 연결 실패</div>`;
         }
     }
 
-    // 🛠️ 구글 데이터 기반으로 '상담신청분야(상담실)' 고유값만 추출하여 필터 목록 생성
-    function buildRoomFilterOptions() {
-        const roomSelect = document.getElementById('roomFilter');
-        roomSelect.innerHTML = '<option value="전체">전체 분야 보기</option>';
-        
-        // 데이터에서 room 데이터 추출 후 중복 제거 및 공백 정제
-        const uniqueRooms = [...new Set(allData.map(item => item.room ? item.room.trim() : '').filter(Boolean))];
-        
-        uniqueRooms.sort().forEach(room => {
-            const option = document.createElement('option');
-            option.value = room;
-            option.textContent = room;
-            roomSelect.appendChild(option);
-        });
-    }
-
-    // 🔄 복합 필터 처리(분야 + 상태) 및 오름차순 정렬 기능
+    // 필터링 로직 수정 (전체 보기 값 매칭)
     function filterData() {
-        const selectedRoom = document.getElementById('roomFilter').value;
-        const selectedStatus = document.getElementById('statusFilter').value;
-        
-        // 1. 상담신청분야 및 상태 다중 조건 필터링
-        let filtered = allData.filter(item => {
-            const matchRoom = (selectedRoom === "전체") || (item.room && item.room.trim() === selectedRoom);
-            const matchStatus = (selectedStatus === "전체") || (item.status === selectedStatus);
-            return matchRoom && matchStatus;
-        });
-        
-        // 2. 희망일자(Ascending) -> 희망시간(Ascending) 정렬 로직 적용
-        filtered.sort((a, b) => {
-            const dateA = a.date ? a.date.replace(/\./g, '-') : "";
-            const dateB = b.date ? b.date.replace(/\./g, '-') : "";
-            
-            if (dateA !== dateB) {
-                return dateA.localeCompare(dateB); // 날짜 오름차순
-            }
-            
-            const timeA = a.time || "";
-            const timeB = b.time || "";
-            return timeA.localeCompare(timeB); // 시간 오름차순
-        });
-
-        renderTable(filtered);
+        const filter = document.getElementById('roomFilter').value;
+        const filtered = filter === "전체 보기" ? allData : allData.filter(d => d.room === filter);
+        renderList(filtered);
     }
 
-    // 테이블 한 줄 표시 렌더링 시스템
-    function renderTable(data) {
-        const container = document.getElementById('reservationTableBody');
+    function renderList(data) {
+        const container = document.getElementById('reservationList');
         if (data.length === 0) {
-            container.innerHTML = `<tr><td colspan="7" class="text-center py-20 text-slate-500">조회된 예약 내역이 없습니다.</td></tr>`;
+            container.innerHTML = `<div class="text-center py-20 text-slate-500">예약 내역이 없습니다.</div>`;
             return;
         }
-
-        container.innerHTML = data.map(item => {
-            const statusInfo = statusMap[item.status] || { text: item.status, class: 'text-slate-400 bg-slate-400/10' };
-            return `
-                <tr onclick="openEdit(${item.id})" class="hover:bg-slate-700/45 cursor-pointer transition-colors border-b border-slate-700/40">
-                    <td class="p-4 text-center font-mono text-slate-300">${item.date || '-'}</td>
-                    <td class="p-4 text-center font-mono text-slate-300">${item.time || '-'}</td>
-                    <td class="p-4 font-medium text-slate-200">${item.dept || '-'}</td>
-                    <td class="p-4 font-bold text-white">${item.name || '-'}</td>
-                    <td class="p-4 text-center">
-                        <span class="text-xs px-2.5 py-1 rounded-full border ${statusInfo.class} font-bold inline-block w-20 text-center">
-                            ${statusInfo.text}
-                        </span>
-                    </td>
-                    <td class="p-4 max-w-xs truncate text-slate-400" title="${item.content || ''}">${item.content || '-'}</td>
-                    <td class="p-4 text-xs text-slate-500">${item.room || '-'}</td>
-                </tr>
-            `;
-        }).join('');
+        container.innerHTML = data.map(item => `
+            <div onclick="openEdit(${item.id})" class="p-4 bg-slate-800 border border-slate-700 rounded-2xl shadow-md active:scale-95 transition-transform">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <span class="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">${item.room}</span>
+                        <h3 class="text-lg font-bold mt-1">${item.name} <span class="text-xs font-normal text-slate-400">${item.dept}</span></h3>
+                    </div>
+                    <span class="text-xs ${item.status === 'confirmed' ? 'text-emerald-400' : 'text-amber-400'} font-bold">
+                        ${item.status === 'confirmed' ? '확정' : '대기'}
+                    </span>
+                </div>
+                <div class="flex justify-between text-xs text-slate-400">
+                    <span><i class="fa-regular fa-calendar-check mr-1"></i> ${item.date}</span>
+                    <span><i class="fa-regular fa-clock mr-1"></i> ${item.time}</span>
+                </div>
+            </div>
+        `).join('');
     }
 
-    // 📊 현재 복합 필터링/정렬된 상태 그대로 엑셀 다운로드 기능
-    function downloadExcel() {
-        const selectedRoom = document.getElementById('roomFilter').value;
-        const selectedStatus = document.getElementById('statusFilter').value;
-        
-        let filtered = allData.filter(item => {
-            const matchRoom = (selectedRoom === "전체") || (item.room && item.room.trim() === selectedRoom);
-            const matchStatus = (selectedStatus === "전체") || (item.status === selectedStatus);
-            return matchRoom && matchStatus;
-        });
-        
-        // 정렬 상태 맞추기
-        filtered.sort((a, b) => {
-            const dateA = a.date ? a.date.replace(/\./g, '-') : "";
-            const dateB = b.date ? b.date.replace(/\./g, '-') : "";
-            if (dateA !== dateB) return dateA.localeCompare(dateB);
-            return (a.time || "").localeCompare(b.time || "");
-        });
+    function formatDateForInput(dateStr) {
+        if (!dateStr) return "";
+        try {
+            let d = new Date(dateStr);
+            if (isNaN(d.getTime())) {
+                let cleaned = dateStr.replace(/\s/g, '').replace(/\./g, '-');
+                if (cleaned.endsWith('-')) cleaned = cleaned.slice(0, -1);
+                const parts = cleaned.split('-');
+                if (parts.length === 3) {
+                    return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                }
+                return "";
+            }
+            return d.toISOString().split('T')[0];
+        } catch (e) { return ""; }
+    }
 
-        if(filtered.length === 0) {
-            alert("다운로드할 데이터가 없습니다.");
-            return;
+    function formatTimeForInput(timeStr) {
+        if (!timeStr) return "09:30"; 
+        
+        let str = String(timeStr).trim();
+        
+        if (str.includes('1899') || str.includes('1900') || str.includes('T')) {
+            try {
+                if (str.includes('T')) {
+                    const timeMatch = str.match(/T(\d{2}):(\d{2})/);
+                    if (timeMatch) {
+                        let hour = parseInt(timeMatch[1], 10);
+                        let min = timeMatch[2];
+                        
+                        if (hour < 9) {
+                            hour += 9;
+                        }
+                        if (hour >= 24) hour -= 24; 
+                    }
+                }
+                
+                const d = new Date(timeStr);
+                if (!isNaN(d.getTime())) {
+                    let hour = d.getHours();
+                    let min = String(d.getMinutes()).padStart(2, '0');
+                    
+                    let minNum = parseInt(min, 10);
+                    if (minNum >= 15 && minNum <= 45) {
+                        min = "30";
+                    } else {
+                        if (minNum > 45) hour += 1;
+                        min = "00";
+                    }
+                    
+                    return `${String(hour).padStart(2, '0')}:${min}`;
+                }
+            } catch (e) {
+                console.error("구글 시트 시간 보정 에러:", e);
+            }
         }
-
-        // 엑셀 저장용 데이터 가공 mapping
-        const excelData = filtered.map(item => ({
-            "희망일자": item.date || '',
-            "희망시간": item.time || '',
-            "학과(전공)": item.dept || '',
-            "성명": item.name || '',
-            "상태": statusMap[item.status] ? statusMap[item.status].text : item.status,
-            "상담내용": item.content || '',
-            "신청상담실": item.room || ''
-        }));
-
-        // SheetJS 작동 프로세스
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-        const workbook = XLSX.utils.book_new();
-        XXLSX.utils.book_append_sheet(workbook, worksheet, "상담예약명단");
         
-        // 컬럼 너비 자동 설정 자동화
-        const maxProps = [{wch: 15}, {wch: 10}, {wch: 25}, {wch: 12}, {wch: 12}, {wch: 50}, {wch: 30}];
-        worksheet['!cols'] = maxProps;
-
-        // 파일 내려받기
-        XLSX.writeFile(workbook, `2027_일학습병행_상담예약관리_출력.xlsx`);
+        const isPM = str.includes('오후') || str.toUpperCase().includes('PM');
+        const isAM = str.includes('오전') || str.toUpperCase().includes('AM');
+        
+        if (isPM || isAM) {
+            let cleanTime = str.replace(/오전|오후|AM|PM/gi, '').trim();
+            const parts = cleanTime.split(':');
+            if (parts.length >= 2) {
+                let hour = parseInt(parts[0], 10);
+                let min = parts[1].replace(/[^0-9]/g, '').padStart(2, '0');
+                if (isPM && hour < 12) hour += 12;
+                if (isAM && hour === 12) hour = 0;
+                return `${String(hour).padStart(2, '0')}:${min}`;
+            }
+        }
+        
+        const parts = str.split(':');
+        if (parts.length >= 2) {
+            let hour = parts[0].replace(/[^0-9]/g, '').padStart(2, '0');
+            let min = parts[1].replace(/[^0-9]/g, '').padStart(2, '0');
+            return `${hour}:${min}`;
+        }
+        
+        return "09:30"; 
     }
 
-    // 🛠️ 날짜 안전 정제 장치
+    function openEdit(id) {
+        const item = allData.find(d => d.id === id);
+        if (!item) return;
+
+        document.getElementById('editId').value = item.id;
+        document.getElementById('editName').value = item.name;
+        document.getElementById('editStatus').value = item.status;
+        document.getElementById('editDept').value = item.dept;
+        document.getElementById('editContent').value = item.content;
+        
+        document.getElementById('editDate').value = formatDateForInput(item.date);
+        document.getElementById('editTime').value = formatTimeForInput(item.time);
+        
+        document.getElementById('editModal').classList.remove('hidden');
+        document.getElementById('editModal').classList.add('flex');
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').classList.add('hidden');
+        document.getElementById('editModal').classList.remove('flex');
+    }
+
+    async function saveChanges() {
+        const id = document.getElementById('editId').value;
+        const updated = {
+            id: Number(id),
+            action: "save",
+            name: document.getElementById('editName').value,
+            status: document.getElementById('editStatus').value,
+            dept: document.getElementById('editDept').value,
+            date: document.getElementById('editDate').value,
+            time: document.getElementById('editTime').value,
+            content: document.getElementById('editContent').value,
+            room: allData.find(d => d.id === Number(id)).room
+        };
+        await sendPost(updated);
+    }
+
+    async function deleteReservation() {
+        if (!confirm("정말 삭제하시겠습니까?")) return;
+        const id = document.getElementById('editId').value;
+        await sendPost({ id: Number(id), action: "delete" });
+    }
+
+    async function sendPost(data) {
+        document.getElementById('editModal').classList.add('opacity-50', 'pointer-events-none');
+        try {
+            await fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify(data)
+            });
+            alert("반영되었습니다.");
+            closeModal();
+            fetchData();
+        } catch (e) {
+            alert("처리 실패");
+        } finally {
+            document.getElementById('editModal').classList.remove('opacity-50', 'pointer-events-none');
+        }
+    }
+
+    window.onload = fetchData;
+</script>
+</body>
+</html>
