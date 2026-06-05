@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2027 일학습병행 상담예약 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+        .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: bold; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased">
+
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg flex flex-col justify-between">
+        
+        <header class="bg-blue-600 text-white p-4 sticky top-0 z-10 shadow-md">
+            <h1 class="text-xl font-bold text-center tracking-tight">2027 일학습병행 상담예약 시스템</h1>
+        </header>
+
+        <nav class="flex border-b border-gray-200 bg-white sticky top-[60px] z-10">
+            <button onclick="switchTab('apply')" id="tab-apply" class="w-1/2 py-3 text-center font-medium text-gray-500 tab-active">
+                상담 신청
+            </button>
+            <button onclick="switchTab('lookup')" id="tab-lookup" class="w-1/2 py-3 text-center font-medium text-gray-500">
+                예약 조회/수정
+            </button>
+        </nav>
+
+        <main class="flex-grow p-4 mb-auto">
+            
+            <section id="sect-apply" class="space-y-4">
+                <form id="booking-form" onsubmit="handleBooking(event)" class="space-y-4">
+                    <input type="hidden" id="edit-id"> 
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">학과(전공)</label>
+                        <input type="text" id="dept" required placeholder="예: 전자공학과" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">성명</label>
+                            <input type="text" id="name" required placeholder="홍길동" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">연락처</label>
+                            <input type="tel" id="phone" required placeholder="010-XXXX-XXXX" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">상담실 선택</label>
+                        <select id="room" required class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                            <option value="">상담실을 선택해 주세요</option>
+                            <option value="SW개발(고광용 교수님)">SW개발(고광용 교수님)</option>
+                            <option value="전자기기HW/디스플레이(김병천 교수님)">전자기기HW/디스플레이(김병천 교수님)</option>
+                            <option value="반도체장비개발(남기민 교수님)">반도체장비개발(남기민 교수님)</option>
+                            <option value="마케팅/광고홍보(강종천 교수님)">마케팅/광고홍보(강종천 교수님)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">상담 희망일</label>
+                            <input type="date" id="date" required class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">시작 시간</label>
+                            <select id="time" required class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                                <option value="">시간 선택</option>
+                                <option value="09:30">09:30</option>
+                                <option value="10:30">10:30</option>
+                                <option value="13:20">13:20</option>
+                                <option value="14:20">14:20</option>
+                                <option value="15:20">15:20</option>
+                                <option value="16:20">16:20</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">상담 내용</label>
+                        <textarea id="content" rows="4" required placeholder="상담받고자 하는 내용을 입력해 주세요." class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                    </div>
+
+                    <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-700 transition">
+                        상담 예약 신청하기
+                    </button>
+                    <button type="button" id="btn-cancel-edit" onclick="cancelEditMode()" class="w-full bg-gray-400 text-white font-bold py-2 rounded-lg hidden">
+                        수정 취소
+                    </button>
+                </form>
+            </section>
+
+            <section id="sect-lookup" class="space-y-4 hidden">
+                <div class="bg-gray-100 p-4 rounded-xl space-y-3">
+                    <p class="text-xs text-gray-500 font-medium">* 신청 시 입력한 성명과 연락처로 실시간 구글 시트 데이터를 조회합니다.</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="search-name" placeholder="성명 입력" class="p-2 border border-gray-300 rounded-lg bg-white text-sm">
+                        <input type="tel" id="search-phone" placeholder="연락처 입력" class="p-2 border border-gray-300 rounded-lg bg-white text-sm">
+                    </div>
+                    <button onclick="lookupReservations()" class="w-full bg-gray-800 text-white font-semibold py-2.5 rounded-lg text-sm hover:bg-gray-900">
+                        예약 내역 실시간 조회
+                    </button>
+                </div>
+
+                <div id="search-results" class="space-y-3">
+                    <p class="text-center text-gray-400 py-8 text-sm">조회된 내역이 없습니다.</p>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="bg-gray-100 p-3 text-center border-t border-gray-200">
+            <p class="text-xs text-gray-400">© 2027 일학습병행 상담시스템 • Google Sheets DB 연동형</p>
+        </footer>
+    </div>
+
+    <script>
+        // =================================================================
+        // ⚠️ [필수 설정] 구글 앱스 스크립트에서 배포 후 발급받은 웹 앱 URL을 아래에 넣으세요.
+        // =================================================================
+        const API_URL = "https://script.google.com/macros/s/AKfycbxtnjRGzpdb_QB7IvCHc3DwLbpbcP8weKFBrQaFK4UhQu7rhWfN5AicdOVv6PT4RPYogg/exec"; 
+
+        let reservations = []; // 서버에서 받아온 데이터를 저장할 배열
+        
+        const publicHolidays = [
+            '2027-01-01', '2027-02-06', '2027-02-07', '2027-02-08', '2027-03-01',
+            '2027-05-05', '2027-05-13', '2027-06-06', '2027-08-15', '2027-09-14',
+            '2027-09-15', '2027-09-16', '2027-10-03', '2027-10-09', '2027-12-25'
+        ];
+
+        // 탭 전환
+        function switchTab(tab) {
+            const tabApply = document.getElementById('tab-apply');
+            const tabLookup = document.getElementById('tab-lookup');
+            const sectApply = document.getElementById('sect-apply');
+            const sectLookup = document.getElementById('sect-lookup');
+
+            if (tab === 'apply') {
+                tabApply.classList.add('tab-active');
+                tabLookup.classList.remove('tab-active');
+                sectApply.classList.remove('hidden');
+                sectLookup.classList.add('hidden');
+            } else {
+                tabApply.classList.remove('tab-active');
+                tabLookup.classList.add('tab-active');
+                sectApply.classList.add('hidden');
+                sectLookup.classList.remove('hidden');
+            }
+        }
+
+        function isHoliday(dateString) {
+            const day = new Date(dateString).getDay();
+            if (day === 0 || day === 6) return true; 
+            return publicHolidays.includes(dateString); 
+        }
+
+        // 구글 시트 백엔드로부터 최신 예약 데이터 전체 로드 (GET 방식)
+        async function fetchLatestReservations() {
+            try {
+                const response = await fetch(API_URL);
+                reservations = await response.json();
+            } catch (error) {
+                console.error("구글 시트 데이터 로드 실패:", error);
+                alert("서버에서 데이터를 가져오는데 실패했습니다.");
+            }
+        }
+
+        // 예약 신청 및 수정 프로세스 (POST 방식)
+        async function handleBooking(event) {
+            event.preventDefault();
+
+            const submitBtn = document.getElementById('btn-submit');
+            const editId = document.getElementById('edit-id').value;
+
+            // 폼 입력값 파싱
+            const dept = document.getElementById('dept').value.trim();
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const room = document.getElementById('room').value;
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            const content = document.getElementById('content').value.trim();
+
+            if (isHoliday(date)) {
+                alert("국공휴일 및 주말에는 상담을 운영하지 않습니다.");
+                return;
+            }
+
+            // 더블 클릭 및 중복 전송 방지용 UI 락킹
+            submitBtn.disabled = true;
+            submitBtn.innerText = "구글 시트에 동기화 중...";
+
+            // 1. 예약 차단 검증을 위해 "구글 시트의 최신 상태"를 먼저 강제 로드
+            await fetchLatestReservations();
+
+            // 2. 동시간대 정원(2명) 타당성 검사 수행
+            const targetId = editId ? Number(editId) : null;
+            const existingCount = reservations.filter(res => 
+                res.room === room && res.date === date && res.time === time && res.id !== targetId
+            ).length;
+
+            if (existingCount >= 2) {
+                alert(`죄송합니다. 선택하신 시간대의 [${room}]은 이미 실시간 예약(2명)이 마감되었습니다.`);
+                submitBtn.disabled = false;
+                submitBtn.innerText = editId ? "예약 수정 내용 반영하기" : "상담 예약 신청하기";
+                return;
+            }
+
+            // 3. 구글 시트로 보낼 JSON 페이로드(Payload) 구성
+            const payload = {
+                action: "save", // GAS 백엔드 조건 분기용 명령문
+                id: editId ? Number(editId) : Date.now(),
+                dept, name, phone, room, date, time, content,
+                status: editId ? reservations.find(r => r.id === targetId).status : 'pending'
+            };
+
+            // 4. fetch를 이용한 비동기 POST 통신 전송
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.result === "success") {
+                    alert(editId ? "예약 정보가 구글 시트에 성공적으로 수정되었습니다." : "구글 시트에 상담 예약 신청이 완료되었습니다.");
+                    if (!editId) document.getElementById('booking-form').reset();
+                    cancelEditMode();
+                    
+                    // 등록완료 후 결과 화면 실시간 조회 처리 유도
+                    document.getElementById('search-name').value = name;
+                    document.getElementById('search-phone').value = phone;
+                    await lookupReservations();
+                    switchTab('lookup');
+                } else {
+                    alert("저장 실패: " + result.message);
+                }
+            } catch (error) {
+                alert("구글 서버 통신 중 오류가 발생했습니다.");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "상담 예약 신청하기";
+            }
+        }
+
+        // 실시간 예약 내역 조회
+        async function lookupReservations() {
+            const sName = document.getElementById('search-name').value.trim();
+            const sPhone = document.getElementById('search-phone').value.trim();
+            const container = document.getElementById('search-results');
+
+            if (!sName || !sPhone) {
+                alert("조회할 성명과 연락처를 모두 입력해 주세요.");
+                return;
+            }
+
+            container.innerHTML = `<p class="text-center text-blue-600 font-medium py-8 text-sm animate-pulse">구글 시트에서 실시간 내역 동기화 중...</p>`;
+
+            // 조회 시점마다 실시간으로 구글 시트에서 데이터를 다시 긁어옴
+            await fetchLatestReservations();
+
+            const filtered = reservations.filter(res => res.name === sName && res.phone === sPhone);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-400 py-8 text-sm">해당 정보로 매칭되는 예약 내역이 없습니다.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            filtered.forEach(res => {
+                const isConfirmed = res.status === 'confirmed';
+                const statusBadge = isConfirmed 
+                    ? `<span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-1 rounded-full">확정 완료</span>`
+                    : `<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full">승인 대기</span>`;
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-2 text-sm";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b pb-2 mb-2">
+                        <span class="font-bold text-blue-600">[${res.room}]</span>
+                        <div>${statusBadge}</div>
+                    </div>
+                    <div><span class="text-gray-500 w-16 inline-block">일시:</span> <strong class="text-gray-900">${res.date} / ${res.time}</strong></div>
+                    <div><span class="text-gray-500 w-16 inline-block">소속/이름:</span> ${res.dept} / ${res.name}</div>
+                    <div><span class="text-gray-500 w-16 inline-block">내용:</span> <p class="bg-gray-50 p-2 rounded mt-1 text-xs text-gray-600 whitespace-pre-wrap">${res.content}</p></div>
+                    
+                    <div class="flex justify-end space-x-2 pt-2 border-t mt-2">
+                        ${isConfirmed ? `
+                            <span class="text-xs text-red-500 font-medium my-auto">※ 확정된 예약은 수정/삭제가 불가능합니다.</span>
+                        ` : `
+                            <button onclick="startEditMode(${res.id})" class="bg-blue-50 text-blue-600 font-semibold px-3 py-1.5 rounded-md text-xs hover:bg-blue-100">모든내용 수정</button>
+                            <button onclick="deleteBooking(${res.id})" class="bg-red-50 text-red-600 font-semibold px-3 py-1.5 rounded-md text-xs hover:bg-red-100">예약 취소</button>
+                        `}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 수정 모드 활성화 (기존 입력 데이터 로드)
+        function startEditMode(id) {
+            const target = reservations.find(res => res.id === id);
+            if (!target) return;
+
+            if (target.status === 'confirmed') {
+                alert("이미 확정된 내역은 수정할 수 없습니다.");
+                return;
+            }
+
+            document.getElementById('edit-id').value = target.id;
+            document.getElementById('dept').value = target.dept;
+            document.getElementById('name').value = target.name;
+            document.getElementById('phone').value = target.phone;
+            document.getElementById('room').value = target.room;
+            document.getElementById('date').value = target.date;
+            document.getElementById('time').value = target.time;
+            document.getElementById('content').value = target.content;
+
+            document.getElementById('btn-submit').innerText = "예약 수정 내용 반영하기";
+            document.getElementById('btn-submit').classList.replace('bg-blue-600', 'bg-emerald-600');
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+
+            switchTab('apply');
+            alert("수정할 내용이 폼에 로드되었습니다.");
+        }
+
+        function cancelEditMode() {
+            document.getElementById('edit-id').value = '';
+            document.getElementById('booking-form').reset();
+            document.getElementById('btn-submit').innerText = "상담 예약 신청하기";
+            document.getElementById('btn-submit').classList.replace('bg-emerald-600', 'bg-blue-600');
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        // 예약 데이터 삭제 (POST 방식, action: "delete")
+        async function deleteBooking(id) {
+            const target = reservations.find(res => res.id === id);
+            if (!target) return;
+
+            if (target.status === 'confirmed') {
+                alert("이미 확정 승인이 완료된 예약은 취소할 수 없습니다.");
+                return;
+            }
+
+            if (confirm("정말로 해당 상담 예약을 취소하시겠습니까?")) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ id: id, action: "delete" })
+                    });
+                    const result = await response.json();
+                    
+                    if (result.result === "success") {
+                        alert("구글 시트에서 예약이 정상 취소/삭제되었습니다.");
+                        await lookupReservations(); // 삭제 후 목록 리프레시
+                    } else {
+                        alert("삭제 실패: " + result.message);
+                    }
+                } catch (error) {
+                    alert("구글 서버와 통신 중 오류가 발생했습니다.");
+                }
+            }
+        }
+    </script>
+</body>
+</html>
