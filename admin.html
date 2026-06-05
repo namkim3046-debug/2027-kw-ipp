@@ -36,17 +36,6 @@
 
         <div class="p-4 bg-slate-800 border border-slate-700 rounded-2xl shadow-lg flex flex-wrap items-center gap-4">
             <div class="w-64">
-                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">검색 구분 (상태별 필터)</label>
-                <select id="statusFilter" onchange="filterData()" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:outline-none focus:border-emerald-500 font-medium text-sm text-slate-200">
-                    <option value="전체">전체 보기</option>
-                    <option value="pending">승인대기</option>
-                    <option value="confirmed">상담확정</option>
-                    <option value="completed">상담완료</option>
-                    <option value="onhold">상담보류</option>
-                </select>
-            </div>
-            
-            <div class="w-64">
                 <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">상담실 유형 필터 (분야별)</label>
                 <select id="roomFilter" onchange="filterData()" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:outline-none focus:border-emerald-500 font-medium text-sm text-slate-200">
                     <option value="전체 보기">전체 보기</option>
@@ -54,6 +43,17 @@
                     <option value="전자기기HW/디스플레이(김병천 교수님)">전자기기HW/디스플레이(김병천 교수님)</option>
                     <option value="반도체장비개발(남기민 교수님)">반도체장비개발(남기민 교수님)</option>
                     <option value="마케팅/광고홍보(강종천 교수님)">마케팅/광고홍보(강종천 교수님)</option>
+                </select>
+            </div>
+            
+            <div class="w-64">
+                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">검색 구분 (상태별 필터)</label>
+                <select id="statusFilter" onchange="filterData()" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:outline-none focus:border-emerald-500 font-medium text-sm text-slate-200">
+                    <option value="전체">전체 보기</option>
+                    <option value="pending" selected>승인대기</option>
+                    <option value="confirmed">상담확정</option>
+                    <option value="completed">상담완료</option>
+                    <option value="onhold">상담보류</option>
                 </select>
             </div>
 
