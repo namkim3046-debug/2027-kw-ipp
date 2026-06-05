@@ -45,7 +45,12 @@
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">연락처</label>
-                            <input type="tel" id="phone" required placeholder="010-XXXX-XXXX" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <input type="tel" id="phone" required 
+                                   placeholder="010-1234-5678" 
+                                   pattern="^01[016789]-\d{3,4}-\d{4}$" 
+                                   maxlength="13" 
+                                   class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <p class="text-xs text-gray-400 mt-1">※ 하이픈(-)을 포함하여 입력해 주세요.</p>
                         </div>
                     </div>
 
@@ -118,18 +123,60 @@
     </div>
 
     <script>
-        // =================================================================
-        // ⚠️ [필수 설정] 구글 앱스 스크립트에서 배포 후 발급받은 웹 앱 URL을 아래에 넣으세요.
-        // =================================================================
         const API_URL = "https://script.google.com/macros/s/AKfycbxtnjRGzpdb_QB7IvCHc3DwLbpbcP8weKFBrQaFK4UhQu7rhWfN5AicdOVv6PT4RPYogg/exec"; 
 
-        let reservations = []; // 서버에서 받아온 데이터를 저장할 배열
+        let reservations = []; 
         
         const publicHolidays = [
             '2027-01-01', '2027-02-06', '2027-02-07', '2027-02-08', '2027-03-01',
             '2027-05-05', '2027-05-13', '2027-06-06', '2027-08-15', '2027-09-14',
             '2027-09-15', '2027-09-16', '2027-10-03', '2027-10-09', '2027-12-25'
         ];
+
+        // ⏰ 구글 시트 시간 보정용 안전 포맷터 함수
+        function safetyTimeFormatter(timeStr) {
+            if (!timeStr) return "";
+            let str = String(timeStr).trim();
+            if (str.includes('T')) {
+                const timePart = str.split('T')[1];
+                const parts = timePart.split(':');
+                if (parts.length >= 2) return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+            }
+            const parts = str.split(':');
+            if (parts.length >= 2) {
+                let hour = parts[0].replace(/[^0-9]/g, '').padStart(2, '0');
+                let min = parts[1].replace(/[^0-9]/g, '').padStart(2, '0');
+                return `${hour}:${min}`;
+            }
+            return str;
+        }
+
+        // 📱 연락처 입력 시 실시간으로 하이픈(-)을 자동 삽입해 주는 내장 리스너
+        document.getElementById('phone').addEventListener('input', function (e) {
+            let val = e.target.value.replace(/[^0-9]/g, '');
+            let formatted = '';
+            if (val.length < 4) {
+                formatted = val;
+            } else if (val.length < 7) {
+                formatted = val.substring(0, 3) + '-' + val.substring(3);
+            } else if (val.length < 11) {
+                formatted = val.substring(0, 3) + '-' + val.substring(3, 6) + '-' + val.substring(6);
+            } else {
+                formatted = val.substring(0, 3) + '-' + val.substring(3, 7) + '-' + val.substring(7, 11);
+            }
+            e.target.value = formatted;
+        });
+
+        // 조회창 연락처 칸에도 동일하게 하이픈 자동 삽입 기능 적용
+        document.getElementById('search-phone').addEventListener('input', function (e) {
+            let val = e.target.value.replace(/[^0-9]/g, '');
+            let formatted = '';
+            if (val.length < 4) { formatted = val; } 
+            else if (val.length < 7) { formatted = val.substring(0, 3) + '-' + val.substring(3); } 
+            else if (val.length < 11) { formatted = val.substring(0, 3) + '-' + val.substring(3, 6) + '-' + val.substring(6); } 
+            else { formatted = val.substring(0, 3) + '-' + val.substring(3, 7) + '-' + val.substring(7, 11); }
+            e.target.value = formatted;
+        });
 
         // 탭 전환
         function switchTab(tab) {
@@ -142,7 +189,7 @@
                 tabApply.classList.add('tab-active');
                 tabLookup.classList.remove('tab-active');
                 sectApply.classList.remove('hidden');
-                sectLookup.classList.add('hidden');
+                sectLookup.add('hidden');
             } else {
                 tabApply.classList.remove('tab-active');
                 tabLookup.classList.add('tab-active');
@@ -157,7 +204,6 @@
             return publicHolidays.includes(dateString); 
         }
 
-        // 구글 시트 백엔드로부터 최신 예약 데이터 전체 로드 (GET 방식)
         async function fetchLatestReservations() {
             try {
                 const response = await fetch(API_URL);
@@ -168,14 +214,12 @@
             }
         }
 
-        // 예약 신청 및 수정 프로세스 (POST 방식)
         async function handleBooking(event) {
             event.preventDefault();
 
             const submitBtn = document.getElementById('btn-submit');
             const editId = document.getElementById('edit-id').value;
 
-            // 폼 입력값 파싱
             const dept = document.getElementById('dept').value.trim();
             const name = document.getElementById('name').value.trim();
             const phone = document.getElementById('phone').value.trim();
@@ -189,14 +233,11 @@
                 return;
             }
 
-            // 더블 클릭 및 중복 전송 방지용 UI 락킹
             submitBtn.disabled = true;
             submitBtn.innerText = "구글 시트에 동기화 중...";
 
-            // 1. 예약 차단 검증을 위해 "구글 시트의 최신 상태"를 먼저 강제 로드
             await fetchLatestReservations();
 
-            // 2. 동시간대 정원(2명) 타당성 검사 수행
             const targetId = editId ? Number(editId) : null;
             const existingCount = reservations.filter(res => 
                 res.room === room && res.date === date && res.time === time && res.id !== targetId
@@ -209,15 +250,13 @@
                 return;
             }
 
-            // 3. 구글 시트로 보낼 JSON 페이로드(Payload) 구성
             const payload = {
-                action: "save", // GAS 백엔드 조건 분기용 명령문
+                action: "save", 
                 id: editId ? Number(editId) : Date.now(),
                 dept, name, phone, room, date, time, content,
                 status: editId ? reservations.find(r => r.id === targetId).status : 'pending'
             };
 
-            // 4. fetch를 이용한 비동기 POST 통신 전송
             try {
                 const response = await fetch(API_URL, {
                     method: "POST",
@@ -230,7 +269,6 @@
                     if (!editId) document.getElementById('booking-form').reset();
                     cancelEditMode();
                     
-                    // 등록완료 후 결과 화면 실시간 조회 처리 유도
                     document.getElementById('search-name').value = name;
                     document.getElementById('search-phone').value = phone;
                     await lookupReservations();
@@ -246,7 +284,6 @@
             }
         }
 
-        // 실시간 예약 내역 조회
         async function lookupReservations() {
             const sName = document.getElementById('search-name').value.trim();
             const sPhone = document.getElementById('search-phone').value.trim();
@@ -259,7 +296,6 @@
 
             container.innerHTML = `<p class="text-center text-blue-600 font-medium py-8 text-sm animate-pulse">구글 시트에서 실시간 내역 동기화 중...</p>`;
 
-            // 조회 시점마다 실시간으로 구글 시트에서 데이터를 다시 긁어옴
             await fetchLatestReservations();
 
             const filtered = reservations.filter(res => res.name === sName && res.phone === sPhone);
@@ -300,7 +336,6 @@
             });
         }
 
-        // 수정 모드 활성화 (기존 입력 데이터 로드)
         function startEditMode(id) {
             const target = reservations.find(res => res.id === id);
             if (!target) return;
@@ -316,7 +351,10 @@
             document.getElementById('phone').value = target.phone;
             document.getElementById('room').value = target.room;
             document.getElementById('date').value = target.date;
-            document.getElementById('time').value = target.time;
+            
+            // 💡 [시간 버그 원천 해결] 가져온 원본 데이터를 안전 포맷터 함수로 감싸 처리하도록 보정했습니다.
+            document.getElementById('time').value = safetyTimeFormatter(target.time);
+            
             document.getElementById('content').value = target.content;
 
             document.getElementById('btn-submit').innerText = "예약 수정 내용 반영하기";
@@ -335,7 +373,6 @@
             document.getElementById('btn-cancel-edit').classList.add('hidden');
         }
 
-        // 예약 데이터 삭제 (POST 방식, action: "delete")
         async function deleteBooking(id) {
             const target = reservations.find(res => res.id === id);
             if (!target) return;
@@ -355,7 +392,7 @@
                     
                     if (result.result === "success") {
                         alert("구글 시트에서 예약이 정상 취소/삭제되었습니다.");
-                        await lookupReservations(); // 삭제 후 목록 리프레시
+                        await lookupReservations(); 
                     } else {
                         alert("삭제 실패: " + result.message);
                     }
