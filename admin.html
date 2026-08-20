@@ -67,18 +67,19 @@
                 <table class="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
                         <tr class="bg-slate-900/50 text-slate-300 text-sm border-b border-slate-700">
+                            <th class="p-4 font-bold w-32">성명</th>
+                            <th class="p-4 font-bold w-40">연락처</th>
                             <th class="p-4 font-bold text-center w-32">희망일자</th>
                             <th class="p-4 font-bold text-center w-24">희망시간</th>
                             <th class="p-4 font-bold w-48">학과(전공)</th>
-                            <th class="p-4 font-bold w-32">성명</th>
                             <th class="p-4 font-bold text-center w-32">상태</th>
-                            <th class="p-4 font-bold">상담내용</th>
                             <th class="p-4 font-bold w-40">신청 상담실</th>
+                            <th class="p-4 font-bold">상담내용</th>
                         </tr>
                     </thead>
                     <tbody id="reservationTableBody" class="text-sm divide-y divide-slate-700/60">
                         <tr>
-                            <td colspan="7" class="text-center py-20 text-slate-500">데이터를 불러오는 중...</td>
+                            <td colspan="8" class="text-center py-20 text-slate-500">데이터를 불러오는 중...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -103,6 +104,12 @@
                         <input type="text" id="editName" class="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-xl focus:border-emerald-500 focus:outline-none">
                     </div>
                     <div>
+                        <label class="block text-slate-400 mb-1">연락처</label>
+                        <input type="text" id="editPhone" maxlength="20" class="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-xl focus:border-emerald-500 focus:outline-none" placeholder="010-0000-0000">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
                         <label class="block text-slate-400 mb-1">상태 설정</label>
                         <select id="editStatus" class="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-xl focus:border-emerald-500 focus:outline-none font-bold text-emerald-400">
                             <option value="pending">승인대기</option>
@@ -111,10 +118,10 @@
                             <option value="onhold">상담보류</option>
                         </select>
                     </div>
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">학과(전공)</label>
-                    <input type="text" id="editDept" class="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-xl focus:border-emerald-500 focus:outline-none">
+                    <div>
+                        <label class="block text-slate-400 mb-1">학과(전공)</label>
+                        <input type="text" id="editDept" class="w-full p-2.5 bg-slate-900 border border-slate-600 rounded-xl focus:border-emerald-500 focus:outline-none">
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -158,12 +165,12 @@
 
     async function fetchData() {
         try {
-            document.getElementById('reservationTableBody').innerHTML = `<tr><td colspan="7" class="text-center py-20 text-slate-500"><i class="fa-solid fa-spinner animate-spin mr-2"></i>데이터를 불러오는 중...</td></tr>`;
+            document.getElementById('reservationTableBody').innerHTML = `<tr><td colspan="8" class="text-center py-20 text-slate-500"><i class="fa-solid fa-spinner animate-spin mr-2"></i>데이터를 불러오는 중...</td></tr>`;
             const res = await fetch(API_URL);
             allData = await res.json();
             filterData();
         } catch (e) {
-            document.getElementById('reservationTableBody').innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-20"><i class="fa-solid fa-triangle-exclamation mr-2"></i>데이터 연결 실패</td></tr>`;
+            document.getElementById('reservationTableBody').innerHTML = `<tr><td colspan="8" class="text-center text-red-400 py-20"><i class="fa-solid fa-triangle-exclamation mr-2"></i>데이터 연결 실패</td></tr>`;
         }
     }
 
@@ -200,31 +207,33 @@
     function renderTable(data) {
         const container = document.getElementById('reservationTableBody');
         if (data.length === 0) {
-            container.innerHTML = `<tr><td colspan="7" class="text-center py-20 text-slate-500">조회된 예약 내역이 없습니다.</td></tr>`;
+            container.innerHTML = `<tr><td colspan="8" class="text-center py-20 text-slate-500">조회된 예약 내역이 없습니다.</td></tr>`;
             return;
         }
 
         container.innerHTML = data.map(item => {
             const statusInfo = statusMap[item.status] || { text: item.status, class: 'text-slate-400 bg-slate-400/10' };
+            const phoneVal = item.phone || item.tel || item.contact || '-';
             return `
                 <tr onclick="openEdit(${item.id})" class="hover:bg-slate-700/45 cursor-pointer transition-colors border-b border-slate-700/40">
+                    <td class="p-4 font-bold text-white">${item.name || '-'}</td>
+                    <td class="p-4 font-mono text-slate-300 max-w-[160px] truncate" title="${phoneVal}">${phoneVal}</td>
                     <td class="p-4 text-center font-mono text-slate-300">${item.date || '-'}</td>
                     <td class="p-4 text-center font-mono text-slate-300">${item.time || '-'}</td>
                     <td class="p-4 font-medium text-slate-200">${item.dept || '-'}</td>
-                    <td class="p-4 font-bold text-white">${item.name || '-'}</td>
                     <td class="p-4 text-center">
                         <span class="text-xs px-2.5 py-1 rounded-full border ${statusInfo.class} font-bold inline-block w-20 text-center">
                             ${statusInfo.text}
                         </span>
                     </td>
-                    <td class="p-4 max-w-xs truncate text-slate-400" title="${item.content || ''}">${item.content || '-'}</td>
                     <td class="p-4 text-xs text-slate-500">${item.room || '-'}</td>
+                    <td class="p-4 max-w-xs truncate text-slate-400" title="${item.content || ''}">${item.content || '-'}</td>
                 </tr>
             `;
         }).join('');
     }
 
-    // 엑셀 다운로드 기능 로직 수정 (상태 + 상담실 복합 필터 동시 반영)
+    // 엑셀 다운로드 기능 로직 수정 (최종 변경된 열 순서 반영)
     function downloadExcel() {
         const statusFilter = document.getElementById('statusFilter').value;
         const roomFilter = document.getElementById('roomFilter').value;
@@ -248,20 +257,21 @@
         }
 
         const excelData = filtered.map(item => ({
+            "성명": item.name || '',
+            "연락처": item.phone || item.tel || item.contact || '',
             "희망일자": item.date || '',
             "희망시간": item.time || '',
             "학과(전공)": item.dept || '',
-            "성명": item.name || '',
             "상태": statusMap[item.status] ? statusMap[item.status].text : item.status,
-            "상담내용": item.content || '',
-            "신청상담실": item.room || ''
+            "신청상담실": item.room || '',
+            "상담내용": item.content || ''
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(excelData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "상담예약명단");
         
-        const maxProps = [{wch: 15}, {wch: 10}, {wch: 25}, {wch: 12}, {wch: 12}, {wch: 50}, {wch: 30}];
+        const maxProps = [{wch: 12}, {wch: 20}, {wch: 15}, {wch: 10}, {wch: 25}, {wch: 12}, {wch: 30}, {wch: 50}];
         worksheet['!cols'] = maxProps;
 
         XLSX.writeFile(workbook, `2027_일학습병행_상담예약관리_출력.xlsx`);
@@ -350,10 +360,11 @@
         if (!item) return;
 
         document.getElementById('editId').value = item.id;
-        document.getElementById('editName').value = item.name;
+        document.getElementById('editName').value = item.name || '';
+        document.getElementById('editPhone').value = item.phone || item.tel || item.contact || '';
         document.getElementById('editStatus').value = item.status;
-        document.getElementById('editDept').value = item.dept;
-        document.getElementById('editContent').value = item.content;
+        document.getElementById('editDept').value = item.dept || '';
+        document.getElementById('editContent').value = item.content || '';
         
         document.getElementById('editDate').value = formatDateForInput(item.date);
         document.getElementById('editTime').value = formatTimeForInput(item.time);
@@ -373,6 +384,7 @@
             id: Number(id),
             action: "save",
             name: document.getElementById('editName').value,
+            phone: document.getElementById('editPhone').value,
             status: document.getElementById('editStatus').value,
             dept: document.getElementById('editDept').value,
             date: document.getElementById('editDate').value,
