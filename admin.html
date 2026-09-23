@@ -22,7 +22,7 @@
         
         <header class="p-5 bg-slate-800 border border-slate-700 rounded-2xl flex justify-between items-center shadow-lg">
             <h1 class="text-2xl font-bold text-emerald-400">
-                <i class="fa-solid fa-user-gear mr-2"></i>2027 일학습병행 상담신청자 관리자 (PC)
+                <i class="fa-solid fa-user-gear mr-2"></i>2027 일학습병행 상담예약 관리 (교수용)
             </h1>
             <div class="flex items-center gap-3">
                 <button onclick="downloadExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors shadow-md">
@@ -36,7 +36,7 @@
 
         <div class="p-4 bg-slate-800 border border-slate-700 rounded-2xl shadow-lg flex flex-wrap items-center gap-4">
             <div class="w-64">
-                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">상담실 유형 필터 (분야별)</label>
+                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">담당교수 선택 (종목별)</label>
                 <select id="roomFilter" onchange="filterData()" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:outline-none focus:border-emerald-500 font-medium text-sm text-slate-200">
                     <option value="전체 보기">전체 보기</option>
                     <option value="SW개발(참빛관 104호, 고광용 교수님)">SW개발(참빛관 104호, 고광용 교수님)</option>
@@ -47,7 +47,7 @@
             </div>
             
             <div class="w-64">
-                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">검색 구분 (상태별 필터)</label>
+                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">진행상태</label>
                 <select id="statusFilter" onchange="filterData()" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:outline-none focus:border-emerald-500 font-medium text-sm text-slate-200">
                     <option value="전체">전체 보기</option>
                     <option value="pending" selected>승인대기</option>
