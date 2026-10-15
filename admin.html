@@ -163,6 +163,13 @@
         'onhold': { text: '상담보류', class: 'text-rose-400 bg-rose-400/10 border-rose-400/30' }
     };
 
+    // 담당교수(상담실) 비교용 정규화: 가운뎃점 변형(·, ・, ．, ㆍ 등)과 공백 차이를 무시
+    function normalizeRoom(str) {
+        return String(str || '')
+            .normalize('NFKC')
+            .replace(/[\s\u00B7\u2022\u2027\u2219\u22C5\u30FB\uFF65\u318D\u119E\u2E31.,]/g, '');
+    }
+
     async function fetchData() {
         try {
             document.getElementById('reservationTableBody').innerHTML = `<tr><td colspan="8" class="text-center py-20 text-slate-500"><i class="fa-solid fa-spinner animate-spin mr-2"></i>데이터를 불러오는 중...</td></tr>`;
@@ -184,7 +191,7 @@
         
         // 2. 상담실 유형 필터링 (추가)
         if (roomFilter !== "전체 보기") {
-            filtered = filtered.filter(d => d.room === roomFilter);
+            filtered = filtered.filter(d => normalizeRoom(d.room) === normalizeRoom(roomFilter));
         }
         
         // 3. 희망일자(Ascending) -> 희망시간(Ascending) 정렬 로직 적용
@@ -241,7 +248,7 @@
         let filtered = statusFilter === "전체" ? allData : allData.filter(d => d.status === statusFilter);
         
         if (roomFilter !== "전체 보기") {
-            filtered = filtered.filter(d => d.room === roomFilter);
+            filtered = filtered.filter(d => normalizeRoom(d.room) === normalizeRoom(roomFilter));
         }
         
         filtered.sort((a, b) => {
